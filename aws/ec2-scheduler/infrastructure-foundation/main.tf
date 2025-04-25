@@ -11,33 +11,14 @@ terraform {
 
 provider "aws" {
   region  = "ap-southeast-3"
-  profile = "devops-aws"
-}
-
-resource "aws_iam_role" "lambda_role" {
-  name = "ec2-scheduler-lambda-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Principal = {
-        Service = "lambda.amazonaws.com"
-      }
-      Effect = "Allow"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_basic" {
-  role       = aws_iam_role.lambda_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  profile = "jawara-poc"
 }
 
 resource "aws_iam_policy" "ec2_control" {
   name   = "EC2ControlPolicy"
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
+    Statement = [ {
       Effect   = "Allow"
       Action   = ["ec2:StartInstances", "ec2:StopInstances"]
       Resource = "*"
@@ -47,54 +28,60 @@ resource "aws_iam_policy" "ec2_control" {
 
 resource "aws_iam_policy_attachment" "attach_ec2_policy" {
   name       = "attach_ec2_control"
-  roles      = [aws_iam_role.lambda_role.name]
+  roles      = [module.ec2_scheduler.lambda_role_name]
   policy_arn = aws_iam_policy.ec2_control.arn
 }
 
-resource "aws_lambda_function" "ec2_scheduler" {
-  function_name = "ec2-scheduler"
-  role          = aws_iam_role.lambda_role.arn
-  handler       = "main.lambda_handler"
-  runtime       = "python3.10"
-  filename      = "main.zip"
-  source_code_hash = filebase64sha256("main.zip")
-  timeout = 300
+resource "aws_iam_role_policy_attachment" "lambda_basic" {
+  role       = module.ec2_scheduler.lambda_role_name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
 
-  environment {
-    variables = {
-      INSTANCE_IDS = var.instance_ids
-    }
+module "ec2_scheduler" {
+  source = "terraform-aws-modules/lambda/aws"
+  
+  function_name          = "ec2-scheduler"
+  role_name              = "EC2SchedulerRole"
+  policy_name            = "LambdaSchedulerLogs"
+  handler                = "main.lambda_handler"
+  runtime                = "python3.10"
+  timeout                = 300
+  local_existing_package = "main.zip" 
+  create_package         = false
+  
+  environment_variables = {
+    INSTANCE_IDS = var.instance_ids
   }
 }
 
 resource "aws_cloudwatch_event_rule" "start_schedule" {
   name                = "ec2-start-schedule"
-  schedule_expression = "cron(0 1 * * ? *)"
+  schedule_expression = "cron(0 1 * * ? *)"  
 }
 
 resource "aws_cloudwatch_event_rule" "stop_schedule" {
   name                = "ec2-stop-schedule"
-  schedule_expression = "cron(0 12 * * ? *)"
+  schedule_expression = "cron(0 12 * * ? *)" 
 }
 
 resource "aws_cloudwatch_event_target" "start_lambda" {
   rule = aws_cloudwatch_event_rule.start_schedule.name
   target_id = "StartEC2"
-  arn = aws_lambda_function.ec2_scheduler.arn
+  arn = module.ec2_scheduler.lambda_function_arn
   input = jsonencode({ "ACTION": "start" })
 }
 
 resource "aws_cloudwatch_event_target" "stop_lambda" {
   rule = aws_cloudwatch_event_rule.stop_schedule.name
   target_id = "StopEC2"
-  arn = aws_lambda_function.ec2_scheduler.arn
+  arn = module.ec2_scheduler.lambda_function_arn
   input = jsonencode({ "ACTION": "stop" })
 }
 
 resource "aws_lambda_permission" "allow_eventbridge_start" {
   statement_id  = "AllowExecutionFromEventBridgeStart"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.ec2_scheduler.function_name
+  function_name = module.ec2_scheduler.lambda_function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.start_schedule.arn
 }
@@ -102,7 +89,7 @@ resource "aws_lambda_permission" "allow_eventbridge_start" {
 resource "aws_lambda_permission" "allow_eventbridge_stop" {
   statement_id  = "AllowExecutionFromEventBridgeStop"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.ec2_scheduler.function_name
+  function_name = module.ec2_scheduler.lambda_function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.stop_schedule.arn
 }
