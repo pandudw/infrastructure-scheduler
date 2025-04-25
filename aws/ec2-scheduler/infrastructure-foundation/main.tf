@@ -11,7 +11,22 @@ terraform {
 
 provider "aws" {
   region  = "ap-southeast-3"
-  profile = "jawara-poc"
+  profile = "devops-aws"
+}
+
+locals {
+  lambda_function_name    = var.function_name
+  lambda_timeout          = var.timeout
+  lambda_role_name        = var.role_name
+  lambda_policy_name      = var.policy_name
+  lambda_handler          = var.handler
+  lambda_runtime          = var.runtime
+  lambda_package          = var.local_existing_package
+
+  start_eventbridge_name  = var.start_schedule_name
+  stop_evenbridge_name    = var.stop_schedule_name
+  start_eventbridge_cron  = var.start_schedule_cron
+  stop_eventbridge_cron   = var.stop_schedule_cron
 }
 
 resource "aws_iam_policy" "ec2_control" {
@@ -40,13 +55,13 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 module "ec2_scheduler" {
   source = "terraform-aws-modules/lambda/aws"
   
-  function_name          = "ec2-scheduler"
-  role_name              = "EC2SchedulerRole"
-  policy_name            = "LambdaSchedulerLogs"
-  handler                = "main.lambda_handler"
-  runtime                = "python3.10"
-  timeout                = 300
-  local_existing_package = "main.zip" 
+  function_name          = local.lambda_function_name
+  role_name              = local.lambda_role_name
+  policy_name            = local.lambda_policy_name
+  handler                = local.lambda_handler
+  runtime                = local.lambda_runtime
+  timeout                = local.lambda_timeout
+  local_existing_package = local.lambda_package 
   create_package         = false
   
   environment_variables = {
@@ -55,13 +70,13 @@ module "ec2_scheduler" {
 }
 
 resource "aws_cloudwatch_event_rule" "start_schedule" {
-  name                = "ec2-start-schedule"
-  schedule_expression = "cron(0 1 * * ? *)"  
+  name                = local.start_eventbridge_name
+  schedule_expression = local.start_eventbridge_cron
 }
 
 resource "aws_cloudwatch_event_rule" "stop_schedule" {
-  name                = "ec2-stop-schedule"
-  schedule_expression = "cron(0 12 * * ? *)" 
+  name                = local.stop_evenbridge_name
+  schedule_expression = local.stop_eventbridge_cron
 }
 
 resource "aws_cloudwatch_event_target" "start_lambda" {
