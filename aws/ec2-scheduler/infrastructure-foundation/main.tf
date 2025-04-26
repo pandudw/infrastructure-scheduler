@@ -24,7 +24,7 @@ locals {
   lambda_package          = var.local_existing_package
 
   start_eventbridge_name  = var.start_schedule_name
-  stop_evenbridge_name    = var.stop_schedule_name
+  stop_eventbridge_name    = var.stop_schedule_name
   start_eventbridge_cron  = var.start_schedule_cron
   stop_eventbridge_cron   = var.stop_schedule_cron
 }
@@ -75,7 +75,7 @@ resource "aws_cloudwatch_event_rule" "start_schedule" {
 }
 
 resource "aws_cloudwatch_event_rule" "stop_schedule" {
-  name                = local.stop_evenbridge_name
+  name                = local.stop_eventbridge_name
   schedule_expression = local.stop_eventbridge_cron
 }
 
