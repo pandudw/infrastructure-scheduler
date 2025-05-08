@@ -24,9 +24,11 @@ locals {
   lambda_package          = var.local_existing_package
 
   start_eventbridge_name  = var.start_schedule_name
-  stop_eventbridge_name    = var.stop_schedule_name
+  stop_eventbridge_name   = var.stop_schedule_name
   start_eventbridge_cron  = var.start_schedule_cron
   stop_eventbridge_cron   = var.stop_schedule_cron
+
+  project_tags            = var.project_tag
 }
 
 
@@ -77,6 +79,7 @@ module "asg_scheduler" {
   runtime                = local.lambda_runtime
   timeout                = local.lambda_timeout
   local_existing_package = local.lambda_package 
+  function_tags          = local.project_tags
   create_package         = false
   
   environment_variables = {
@@ -87,11 +90,13 @@ module "asg_scheduler" {
 resource "aws_cloudwatch_event_rule" "start_schedule" {
   name                = local.start_eventbridge_name
   schedule_expression = local.start_eventbridge_cron
+  tags                = local.project_tags
 }
 
 resource "aws_cloudwatch_event_rule" "stop_schedule" {
   name                = local.stop_eventbridge_name
   schedule_expression = local.stop_eventbridge_cron
+  tags                = local.project_tags
 }
 
 resource "aws_cloudwatch_event_target" "start_lambda" {

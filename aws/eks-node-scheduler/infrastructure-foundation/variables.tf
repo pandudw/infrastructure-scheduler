@@ -92,3 +92,13 @@ variable "local_existing_package" {
 variable "region" {
   default = "ap-southeast-3"
 }
+
+variable "project_tag" {
+  description = "Map of tags to assign to resources"
+  type        = map(string)
+  default = {
+    Project = "ASG-Scheduler"
+    Environment = "DEV"
+    ManagedBy = "Terraform"
+  }
+}
