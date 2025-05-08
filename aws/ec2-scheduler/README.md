@@ -9,6 +9,13 @@ This repository contains Terraform configurations and a Python script to automat
 - 🐍 Custom Python logic (main.py) for AWS Lambda
 - 📦 Serverless architecture — no EC2 for scheduling
 
+## 📦 Architecture
+
+- **Lambda Function**: Executes the logic to scale the node group
+- **EventBridge Rules**: Define the schedule for scaling up/down
+- **IAM Role**: Grants Lambda permissions to update the Node Group via ASG
+- **Terraform Module**: All infrastructure as code
+
 ## 🧠 Requirements
 - Terraform >= 1.3.2
 - AWS Provider >= 5.83
