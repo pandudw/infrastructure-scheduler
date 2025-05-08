@@ -81,7 +81,6 @@ module "asg_scheduler" {
   
   environment_variables = {
     ASG_NAME          = var.asg_name
-    DESIRED_CAPASITY  = var.desired_capacity
   }
 }
 

@@ -25,6 +25,13 @@ variable "runtime" {
   default     = "python3.10"
 }
 
+variable "asg_name" {
+  description = "Auto Scaling Group name"
+  type        = string
+  default = "test"
+}
+
+
 # ----------------------------------------------------------------------
 # IAM
 # ----------------------------------------------------------------------
@@ -84,16 +91,4 @@ variable "local_existing_package" {
 # ---------------------------------------------------------------------
 variable "region" {
   default = "ap-southeast-3"
-}
-
-variable "asg_name" {
-  description = "Auto Scaling Group name"
-  type        = string
-  default = "test"
-}
-
-variable "desired_capacity" {
-  description = "Desired capacity for the ASG"
-  type        = number
-  default = 1
 }
