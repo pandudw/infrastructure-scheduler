@@ -9,9 +9,6 @@ This repository contains Terraform configurations and a Python script to automat
 - 🐍 Custom Python logic (main.py) for AWS Lambda
 - 📦 Serverless architecture — no EC2 for scheduling
 
-## 🚧 Work in Progress
-- 🔄 EKS Node Group Scheduler — currently in development to support scaling EKS node groups on a schedule using similar Lambda + Terraform patterns.
-
 ## 🧠 Requirements
 - Terraform >= 1.3.2
 - AWS Provider >= 5.83
